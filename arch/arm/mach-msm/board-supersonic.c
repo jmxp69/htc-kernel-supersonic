@@ -49,6 +49,7 @@
 #include <mach/msm_serial_debugger.h>
 #include <mach/system.h>
 #include <linux/spi/spi.h>
+#include <mach/bcm_bt_lpm.h>
 
 #include "board-supersonic.h"
 #include "devices.h"
@@ -1265,13 +1266,33 @@ static struct platform_device supersonic_flashlight_device = {
 	},
 };
 
+static struct msm_serial_hs_platform_data msm_uart_dm1_pdata = {
+        .rx_wakeup_irq = -1,
+        .inject_rx_on_wakeup = 0,
+        .exit_lpm_cb = bcm_bt_lpm_exit_lpm_locked,
+};
+
+static struct bcm_bt_lpm_platform_data bcm_bt_lpm_pdata = {
+        .gpio_wake = SUPERSONIC_GPIO_BT_WAKE,
+        .gpio_host_wake = SUPERSONIC_GPIO_BT_HOST_WAKE,
+        .request_clock_off_locked = msm_hs_request_clock_off_locked,
+        .request_clock_on_locked = msm_hs_request_clock_on_locked,
+};
+
+struct platform_device bcm_bt_lpm_device = {
+        .name = "bcm_bt_lpm",
+        .id = 0,
+        .dev = {
+                .platform_data = &bcm_bt_lpm_pdata,
+        },
+};
+
 static struct platform_device *devices[] __initdata = {
 #ifndef CONFIG_MSM_SERIAL_DEBUGGER
 	&msm_device_uart1,
 #endif
-#ifdef CONFIG_SERIAL_MSM_HS
+	&bcm_bt_lpm_device,
 	&msm_device_uart_dm1,
-#endif
 	&supersonic_h2w,
 	&htc_battery_pdev,
 	&supersonic_audio_jack,
@@ -1386,27 +1407,6 @@ static struct perflock_platform_data supersonic_perflock_data = {
 
 int supersonic_init_mmc(int sysrev);
 
-#ifdef CONFIG_SERIAL_MSM_HS
-extern void supersonic_config_bt_disable_active(void);
-extern void supersonic_config_bt_disable_sleep(void);
-extern int supersonic_is_bluetooth_off(void);
-
-static struct msm_serial_hs_platform_data msm_uart_dm1_pdata = {
-	.wakeup_irq = MSM_GPIO_TO_INT(SUPERSONIC_GPIO_BT_HOST_WAKE),	/*Chip to Device*/
-	.inject_rx_on_wakeup = 0,
-	.cpu_lock_supported = 0,
-
-	.config_as_uart = supersonic_config_bt_disable_active,
-	.config_as_gpio = supersonic_config_bt_disable_sleep,
-	.need_config = supersonic_is_bluetooth_off,
-
-	/* for bcm */
-	.bt_wakeup_pin_supported = 1,
-	.bt_wakeup_pin = SUPERSONIC_GPIO_BT_CHIP_WAKE,
-	.host_wakeup_pin = SUPERSONIC_GPIO_BT_HOST_WAKE,
-};
-#endif
-
 #if defined(CONFIG_MSM_SERIAL_DEBUGGER)
 struct msm_serial_debug_platform_data msm_uart_debug_pdata = {
 	.config_gpio = supersonic_config_serial_debug_gpios,
@@ -1509,7 +1509,7 @@ static void __init supersonic_init(void)
 
 	#ifdef CONFIG_SERIAL_MSM_HS
 	msm_device_uart_dm1.dev.platform_data = &msm_uart_dm1_pdata;
-	msm_device_uart_dm1.name = "msm_serial_hs_bcm";	/* for bcm */
+	msm_device_uart_dm1.name = "msm_serial_hs";	/* for bcm */
 	#endif
 
 	config_gpio_table(camera_off_gpio_table,
