@@ -129,8 +129,9 @@ int __delayacct_add_tsk(struct taskstats *d, struct task_struct *tsk)
 	t1 = tsk->sched_info.pcount;
 	t2 = tsk->sched_info.run_delay;
 	t3 = tsk->se.sum_exec_runtime;
-
-	d->cpu_count += t1;
+        t3 = tsk_seruntime(tsk);
+	
+        d->cpu_count += t1;
 
 	tmp = (s64)d->cpu_delay_total + t2;
 	d->cpu_delay_total = (tmp < (s64)d->cpu_delay_total) ? 0 : tmp;

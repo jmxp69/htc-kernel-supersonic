@@ -11,8 +11,8 @@
 
 #include <linux/nfs4.h>
 
-/* thread usage wraps very million seconds (approx one fortnight) */
-#define	NFSD_USAGE_WRAP	(HZ*1000000)
+/* thread usage wraps every one hundred thousand seconds (approx one day) */
+#define	NFSD_USAGE_WRAP	(HZ*100000)
 
 #ifdef __KERNEL__
 
@@ -49,3 +49,4 @@ void	nfsd_stat_shutdown(void);
 
 #endif /* __KERNEL__ */
 #endif /* LINUX_NFSD_STATS_H */
+
